@@ -1,0 +1,68 @@
+# docker-composeのバージョンを指定
+version: "3.9"
+
+services:
+  chat_db_cn:
+    # コンテナ名をdb_containerに設定
+    container_name: db_container
+
+    # Dockerfileからビルドする
+    build:
+      # ビルドコンテキストとDockerfileのパスを指定
+      context: .
+      dockerfile: # [問題1] ここを記述してみましょう！
+
+    # 一番下で作成しているvolumeをコンテナの/var/lib/mysqlにマウントする
+    volumes:
+      - # [問題2] ここを記述してみましょう！
+
+    # コンテナ内の環境変数を設定
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=chatapp
+      - MYSQL_USER=testuser
+      - MYSQL_PASSWORD=testuser
+
+    # DBのコンテナのヘルスチェックを行う
+    # mysqladmin(MySQLサーバーの管理を行うクライアントを使ってDBコンテナ自身(127.0.0.1)にpingを送ってヘルスチェックを行う
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD
+      # ヘルスチェックのインターバルは10秒
+      interval: 10s
+      # タイムアウト時間は10秒
+      timeout: 10s
+      # リトライ回数は3回
+      retries: 3
+      # ヘルスチェックが失敗しても無視する時間は30秒
+      start_period: 30s
+
+  chat_app_cn:
+    # コンテナ名をapp_containerに設定
+    container_name: app_container
+
+    # Dockerfileからビルドする
+    build:
+      # ビルドコンテキストとDockerfileのパスを指定
+      context: .
+      dockerfile: # [問題3] ここを記述してみましょう！
+
+    # ホストのディレクトリをコンテナの/codeにマウントする
+    volumes:
+      - ./chat_app:/code
+
+    # ローカルの8080番ポートとコンテナの5000番ポートをつなぐ
+    ports:
+      - # [問題4] ここを記述してみましょう！
+
+    # コンテナ起動後に実行するコマンドコマンド
+    command:  bash -c "python app.py"
+
+    # 先にdbを起動してからappを起動する
+    depends_on:
+      chat_db_cn:
+        # dbのヘルスチェックが終わってからappを起動させる
+        condition: service_healthy
+
+# ボリューム名を指定して作成
+volumes:
+  mysql_data:
